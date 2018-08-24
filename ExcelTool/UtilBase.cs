@@ -1,11 +1,12 @@
-﻿using OfficeOpenXml;
+﻿using ExcelDataReader;
+using OfficeOpenXml;
 using System;
-using System.Collections.Generic;
+using System.Data;
 using System.IO;
 
 namespace ExcelTool
 {
-    class UtilBase
+    public class UtilBase
     {
         public static void ReadWorkbook(string filePath)
         {
@@ -30,13 +31,18 @@ namespace ExcelTool
 
                 for (int row = 2; row < 16; row++)
                 {
-                    var rowKeyVal = $"{worksheet.Cells[row, 1].Value}";
-                    Console.WriteLine($"{rowKeyVal}:");
+                    bool nullKey = true;
+                    var keyCell = worksheet.Cells[row, 1].Value ?? "valid";
 
-
+                    if (keyCell.Equals("valid") == true)
+                    {
+                        Console.WriteLine($"{worksheet.Cells[row, 1].Value}:");
+                        nullKey = false;
+                    }
+                    
                     for (int col = 2; col < 17; col++)
                     {
-                        if (rowKeyVal == null)
+                        if (nullKey)
                         {
                             col = 13;
                         }
@@ -46,5 +52,33 @@ namespace ExcelTool
                 }
             }
         }
+
+        public static void GetExcelData(string filePath)
+        {
+            DataSet result;
+
+            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
+            {
+                using (var reader = ExcelReaderFactory.CreateReader(stream))
+                {
+                    do
+                    {
+                        while (reader.Read())
+                        {
+                        }
+                    }
+                    while (reader.NextResult());
+
+                    result = reader.AsDataSet();
+                }
+            }
+
+            Console.WriteLine(result);
+
+        }
+
+
     }
+
+    
 }
