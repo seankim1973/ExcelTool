@@ -23,7 +23,6 @@ namespace ExcelTool
         [Test]
         public void ExcelData()
         {
-            UtilBase.GetExcelData(filePath);
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using ExcelDataReader;
+using ExcelNumberFormat;
 using OfficeOpenXml;
 using System;
 using System.Data;
+using System.Globalization;
 using System.IO;
 
 namespace ExcelTool
@@ -31,54 +33,25 @@ namespace ExcelTool
 
                 for (int row = 2; row < 16; row++)
                 {
-                    bool nullKey = true;
-                    var keyCell = worksheet.Cells[row, 1].Value ?? "valid";
-
-                    if (keyCell.Equals("valid") == true)
+                    var tcKey = worksheet.Cells[row, 1].Value;
+                    if (tcKey != null)
                     {
-                        Console.WriteLine($"{worksheet.Cells[row, 1].Value}:");
-                        nullKey = false;
+                        Console.WriteLine(tcKey);
                     }
                     
-                    for (int col = 2; col < 17; col++)
+                    for (int col = 2; col < 18; col++)
                     {
-                        if (nullKey)
-                        {
-                            col = 13;
-                        }
+                        var columnData = worksheet.Cells[row, col].Value;
 
-                        Console.WriteLine($"        { worksheet.Cells[1, col].Value}: { worksheet.Cells[row, col].Value}");
+                        if (columnData != null)
+                        {
+                            Console.WriteLine($"        {worksheet.Cells[1, col].Value}: {columnData}");
+                        }
+                        
                     }
                 }
             }
         }
-
-        public static void GetExcelData(string filePath)
-        {
-            DataSet result;
-
-            using (var stream = File.Open(filePath, FileMode.Open, FileAccess.Read))
-            {
-                using (var reader = ExcelReaderFactory.CreateReader(stream))
-                {
-                    do
-                    {
-                        while (reader.Read())
-                        {
-                        }
-                    }
-                    while (reader.NextResult());
-
-                    result = reader.AsDataSet();
-                }
-            }
-
-            Console.WriteLine(result);
-
-        }
-
 
     }
-
-    
 }
