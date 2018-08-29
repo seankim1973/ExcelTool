@@ -1,12 +1,15 @@
 using NUnit.Framework;
+using OfficeOpenXml;
+using System;
 
 namespace ExcelTool
 {
     [TestFixture]
-    public class UnitTest1
+    public class UnitTest1 : UtilBase
     {
         
-        readonly string filePath = $"C:\\Users\\schong\\Downloads\\atm-exporter (1).xlsx";
+        readonly string filePath = $"C:\\TestCases\\BreakSheet Module.xlsx";
+
 
         [SetUp]
         public void SetUp()
@@ -17,12 +20,19 @@ namespace ExcelTool
         [Test]
         public void TestMethod1()
         {
-            UtilBase.ReadWorkbook(filePath);
+            UtilBase util = new UtilBase();
+            util.ReadWorkbook(filePath);
         }
+
+
 
         [Test]
         public void ExcelData()
         {
+            UtilBase util = new UtilBase();
+            util.GetWorksheet(filePath, 0);
+            
+
         }
     }
 }
