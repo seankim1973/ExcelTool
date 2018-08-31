@@ -11,8 +11,7 @@ namespace ExcelTool
 {
     [TestFixture]
     public class UnitTest1 : UtilBase
-    {
-        
+    {      
         readonly string fileName = $"BreakSheet Module";
         string path = string.Empty;
 
@@ -132,6 +131,7 @@ namespace ExcelTool
 
             return style;
         }
+
         [Test]
         public void ExcelData()
         {

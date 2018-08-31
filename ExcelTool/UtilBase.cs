@@ -11,112 +11,40 @@ namespace ExcelTool
 {
     public class UtilBase
     {
-        public void ReadWorkbook(string filePath)
+        enum ImportHeaders
         {
-            FileInfo existingFile = new FileInfo(filePath);
-            using (ExcelPackage package = new ExcelPackage(existingFile))
-            {
-                ExcelWorksheet worksheet = package.Workbook.Worksheets[0];
-
-                //--Get name of the worksheet
-                //string sheetname = worksheet.Name;
-                //Console.WriteLine(sheetname);
-
-                //--Get worksheet by name
-                //ExcelWorksheet sheet0 = package.Workbook.Worksheets["Sheet0"];
-                //Console.WriteLine($"SHEET_0 NAME: {sheet0.Name}");
-
-                //--Get cell value [int Row, int Col]
-                //string colPrecondition = worksheet.Cells[2,4].Value.ToString();
-                //Console.WriteLine(colPrecondition);
-
-
-                for (int row = 2; row < 16; row++)
-                {
-                    var tcKey = worksheet.Cells[row, 1].Value;
-                    if (tcKey != null)
-                    {
-                        Console.WriteLine(tcKey);
-                    }
-
-                    for (int col = 2; col < 18; col++)
-                    {
-                        var columnData = worksheet.Cells[row, col].Value;
-
-                        if (columnData != null)
-                        {
-                            Console.WriteLine($"        {worksheet.Cells[1, col].Value}: {columnData}");
-                        }
-                    }
-                }
-            }
-
-
+            [IndexValue(1)] Key,
+            [IndexValue(2)] TCName,
+            [IndexValue(4)] Precondition,
+            [IndexValue(5)] Objective,
+            [IndexValue(6)] Folder,
+            [IndexValue(7)] Priority,
+            [IndexValue(9)] Labels,
+            [IndexValue(14)] Step,
+            [IndexValue(15)] TestData,
+            [IndexValue(16)] Result
+        }
+        enum DestHeaders
+        {
+            [IndexValue(1)] TestID,
+            [IndexValue(2)] TCName,
+            [IndexValue(3)] Description,
+            [IndexValue(4)] Tags,
+            [IndexValue(5)] Precondition,
+            [IndexValue(6)] Step,
+            [IndexValue(7)] Result,
         }
 
-        public void GetWorksheet<T>(string filePath, T sheetNameOrIndex)
-        {
-            Type argType = sheetNameOrIndex.GetType();
-            FileInfo existingFile = new FileInfo(filePath);
-            ExcelWorksheet worksheet = null;
-
-            using (ExcelPackage package = new ExcelPackage(existingFile))
-            {
-                if (argType == typeof(int))
-                {
-                    int index = (int)Convert.ChangeType(sheetNameOrIndex, typeof(int));
-                    worksheet = package.Workbook.Worksheets[index];
-                }
-                else if (argType == typeof(string))
-                {
-                    string name = (string)Convert.ChangeType(sheetNameOrIndex, typeof(string));
-                    worksheet = package.Workbook.Worksheets[name];
-                }
-
-                int colCount = worksheet.Dimension.End.Column;
-                int rowCount = worksheet.Dimension.End.Row;
-
-                Console.WriteLine($"Column count: {colCount} \nRow count: {rowCount}");
-                //for (int row = 2; row < 16; row++)
-                //{
-                //    var tcKey = worksheet.Cells[row, 1].Value;
-                //    if (tcKey != null)
-                //    {
-                //        Console.WriteLine(tcKey);
-                //    }
-
-                //    for (int col = 2; col < 18; col++)
-                //    {
-                //        var columnData = worksheet.Cells[row, col].Value;
-
-                //        if (columnData != null)
-                //        {
-                //            Console.WriteLine($"        {worksheet.Cells[1, col].Value}: {columnData}");
-                //        }
-                //    }
-                //}
-            }
-
-
-            if (worksheet == null)
-            {
-                NUnit.Framework.Assert.IsNotNull(worksheet,
-                    $"Worksheet in file not found. \nFile: {filePath} \nWorksheet: {sheetNameOrIndex}");
-            }
-
-        }
-
-
-        static string _key = null;
-        static string _tcName = null;
-        static string _preCondition = null;
-        static string _objective = null;
-        static string _priority = null;
-        static string _labels = null;
-        static string _step = null;
-        static string _testData = null;
-        static string _result = null;
-        static string _folder = null;
+        string _key;
+        string _tcName;
+        string _preCondition;
+        string _objective;
+        string _priority;
+        string _labels;
+        string _step;
+        string _testData;
+        string _result;
+        string _folder;
 
         /// <summary>
         /// Provide the spreadsheet filename (without .xlsx extension) as an argument and place the file in C:\TestCases
@@ -169,22 +97,40 @@ namespace ExcelTool
                     int colCount = importWS.Dimension.End.Column;
                     int rowCount = importWS.Dimension.End.Row;
                     int destRow = 2;
-                    StringBuilder sb = null;
 
                     for (int row = 2; row < rowCount; row++)
                     {
                         _key = importWS.Cells[row, Import_Key].Value?.ToString();
+                        _tcName = importWS.Cells[row, Import_TCName].Value?.ToString();
+                        _preCondition = importWS.Cells[row, Import_PreCondition].Value?.ToString();
+                        _objective = importWS.Cells[row, Import_Objective].Value?.ToString();
+                        _priority = importWS.Cells[row, Import_Priority].Value?.ToString();
+                        _labels = importWS.Cells[row, Import_Labels].Value?.ToString();
+                        _step = importWS.Cells[row, Import_Step].Value?.ToString();
+                        _testData = importWS.Cells[row, Import_TestData].Value?.ToString();
+                        _result = importWS.Cells[row, Import_Result].Value?.ToString();
+                        _folder = importWS.Cells[row, Import_Folder].Value?.ToString();
 
-                        if (_key != null)
+
+
+                        if (!string.IsNullOrWhiteSpace(_key))
                         {
-                            _folder = importWS.Cells[row, Import_Folder].Value?.ToString();
-
-                            if (_folder!= null && _folder.Contains("/"))
+                            if (!string.IsNullOrWhiteSpace(_folder) && _folder.Contains("/"))
                             {
                                 var folderHiearchy = Regex.Split(_folder, "/");
                                 int fhCount = folderHiearchy.Length;
 
-                                if (fhCount > 2)
+                                //TODO:
+                                //folder(index1) - create worksheet
+                                //subfolder1(index2) - if worksheet exists (else create new worksheet)
+                                    //--get row count
+                                    //--if merged row with subfolder name exists, append to end of row count (else create merged row)
+                                //subfolder2(index3) - if (subfolder1(index2)) worksheet exists (else create new worksheet)
+                                    //--get row count
+                                    //--if merged row with 
+
+
+                                if (fhCount > 1)
                                 {
                                     //TODO: use hashmap to track sub-folder merged-cells exists
                                     //or Create new worksheet for each sub-folder entry
@@ -199,47 +145,46 @@ namespace ExcelTool
                                         }
                                     }
                                 }
-                                
                             }
 
-                            _tcName = importWS.Cells[row, Import_TCName].Value?.ToString();
-                            _preCondition = importWS.Cells[row, Import_PreCondition].Value?.ToString();
-                            _objective = importWS.Cells[row, Import_Objective].Value?.ToString();
-                            _priority = importWS.Cells[row, Import_Priority].Value?.ToString();
-                            _labels = importWS.Cells[row, Import_Labels].Value?.ToString();
-                            _step = importWS.Cells[row, Import_Step].Value?.ToString();
-                            _testData = importWS.Cells[row, Import_TestData].Value?.ToString();
-                            _result = importWS.Cells[row, Import_Result].Value?.ToString();
+                            if (!string.IsNullOrWhiteSpace(_labels))
+                            {
+                                if (_labels.Contains(","))
+                                {
+                                    string[] multiLabel = Regex.Split(_labels, ", ");
+
+                                    for (int i = 0; i < multiLabel.Length; i++)
+                                    {
+                                        destWS.Cells[destRow, Dest_Tags].Value = multiLabel[i];
+                                    }
+                                }
+                                else
+                                {
+                                    destWS.Cells[destRow, Dest_Tags].Value = _labels;
+                                }
+                            }
 
                             destWS.Cells[destRow, Dest_ID].Value = _key;
                             destWS.Cells[destRow, Dest_TCName].Value = _tcName;
                             destWS.Cells[destRow, Dest_Description].Value = _objective;
+                            destWS.Cells[destRow, Dest_Precondition].Value = _preCondition;
 
-                            if(_labels.Contains(","))
+                            
+                            destWS.Cells[destRow, Dest_Tags].Value = _priority;
+
+                            if (string.IsNullOrWhiteSpace(_step))
                             {
-                                try
+                                if (!string.IsNullOrWhiteSpace(_testData))
                                 {
-                                    string[] multiLabel = Regex.Split(_labels, ", ");
-                                    sb = new StringBuilder();
-
-                                    for (int i = 0; i < multiLabel.Length; i++)
-                                    {
-                                        sb.AppendLine($"{multiLabel[i]}, {Environment.NewLine},");
-                                    }
-                                }
-                                finally
-                                {
-                                    var sbString = sb.ToString();
-                                    sbString = sbString.TrimEnd(',');
-                                    _labels = sbString;
+                                    destWS.Cells[destRow, Dest_Step].Value = _testData;
                                 }
                             }
+                            else 
+                            {
+                                destWS.Cells[destRow, Dest_Step].Value = (!string.IsNullOrWhiteSpace(_testData)) ?
+                                    $"{_step}, {Environment.NewLine}, {_testData}" : destWS.Cells[destRow, Dest_Step].Value = _step;                            
+                            }
 
-                            destWS.Cells[destRow, Dest_Tags].Value = _labels;
-                            destWS.Cells[destRow, Dest_Tags].Value = _priority;
-                            destWS.Cells[destRow, Dest_Precondition].Value = _preCondition;
-                            destWS.Cells[destRow, Dest_Step].Value = _step;
-                            destWS.Cells[destRow, Dest_Step].Value = _testData;
                             destWS.Cells[destRow, Dest_Result].Value = _result;                           
                         }
                         else
@@ -272,53 +217,6 @@ namespace ExcelTool
             }
         }
 
-        enum ImportHeaders
-        {
-            [IndexValue(1)] Key,
-            [IndexValue(2)] TCName,
-            [IndexValue(4)] Precondition,
-            [IndexValue(5)] Objective,
-            [IndexValue(6)] Folder,
-            [IndexValue(7)] Priority,
-            [IndexValue(9)] Labels,
-            [IndexValue(14)] Step,
-            [IndexValue(15)] TestData,
-            [IndexValue(16)] Result
-        }
 
-        enum DestHeaders
-        {
-            [IndexValue(1)] TestID,
-            [IndexValue(2)] TCName,
-            [IndexValue(3)] Description,
-            [IndexValue(4)] Tags,
-            [IndexValue(5)] Precondition,
-            [IndexValue(6)] Step,
-            [IndexValue(7)] Result,
-        }
-    }
-
-    public class DataItem
-    {
-        [Description("TestID")]
-        public string TestID { get; set; }
-
-        [Description("Test name")]
-        public string TCName { get; set; }
-
-        [Description("Test description")]
-        public string Description { get; set; }
-
-        [Description("Test tags")]
-        public string Tags { get; set; }
-
-        [Description("Pre-condition")]
-        public string Precondition { get; set; }
-
-        [Description("Steps")]
-        public string Step { get; set; }
-
-        [Description("Result")]
-        public string Result { get; set; }
     }
 }

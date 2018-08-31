@@ -27,6 +27,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestCases\BreakSheet Module_Hiptest.xlsx" />
+    <None Remove="TestCases\excel_import_template.xlsx" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="EPPlus" Version="4.5.2.1" />
     <PackageReference Include="ExcelDataReader" Version="3.4.0" />
     <PackageReference Include="ExcelDataReader.DataSet" Version="3.4.0" />
@@ -67,10 +72,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestCases\BreakSheet Module.xlsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="TestCases\excel_import_template.xlsx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
