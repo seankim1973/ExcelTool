@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -51,6 +52,15 @@ namespace ExcelTool
                 di.Create();
             }
             return di;
+        }
+
+        public static DirectoryInfo GetCodeBasePath(bool forOutputDir = true)
+        {
+            Directory.SetCurrentDirectory(Directory.GetParent(TestContext.CurrentContext.TestDirectory).ToString());
+            string baseDir = Directory.GetParent(Directory.GetCurrentDirectory()).ToString();
+
+            var directory = (forOutputDir) ? (Directory.GetParent(baseDir)).GetDirectories("TestCases")[0] : (Directory.GetParent(baseDir));
+            return directory;
         }
     }
 
