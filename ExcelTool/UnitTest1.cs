@@ -12,7 +12,7 @@ namespace ExcelTool
     [TestFixture]
     public class UnitTest1 : UtilBase
     {      
-        readonly string fileName = $"BreakSheet Module";
+        readonly string fileName = $"atm-exporter_ALL";
         string path = string.Empty;
 
         [SetUp]
@@ -140,8 +140,33 @@ namespace ExcelTool
             //startupPath = Environment.CurrentDirectory;
             //Console.WriteLine($"#2: {startupPath}");
 
+            string[] fileNames = {
+                "Test Module"
+            };
+
             UtilBase util = new UtilBase();
-            util.FormatWorksheet(fileName);
+            for(int i = 0; i < fileNames.Length; i++)
+            {
+                util.FormatWorksheet(fileNames[i]);
+            }
+            
+        }
+
+        [Test]
+        public void UnitTest()
+        {
+            string _folder = "BreakSheet Module";
+
+            var folders = Regex.Split(_folder, "/");
+            int fhCount = (folders.Length > 2) ? 3 : folders.Length;
+
+            var fh = _folder.Split(new[] {'/'}, fhCount);
+
+            for (int i=0; i<fhCount; i++)
+            {
+                Console.WriteLine($"Part{i+1}: {fh[i]}");
+            }
+
         }
     }
 }

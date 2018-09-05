@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.ComponentModel;
 using OfficeOpenXml.Table;
 using OfficeOpenXml.Style;
+using System.Collections.Generic;
 
 namespace ExcelTool
 {
@@ -15,7 +16,7 @@ namespace ExcelTool
         {
             [IndexValue(1)] Key,
             [IndexValue(2)] TCName,
-            [IndexValue(4)] Precondition,
+            [IndexValue(4)] Preconditions,
             [IndexValue(5)] Objective,
             [IndexValue(6)] Folder,
             [IndexValue(7)] Priority,
@@ -30,14 +31,14 @@ namespace ExcelTool
             [IndexValue(2)] TCName,
             [IndexValue(3)] Description,
             [IndexValue(4)] Tags,
-            [IndexValue(5)] Precondition,
+            [IndexValue(5)] Preconditions,
             [IndexValue(6)] Step,
             [IndexValue(7)] Result,
         }
 
         string _key;
         string _tcName;
-        string _preCondition;
+        string _preConditions;
         string _objective;
         string _priority;
         string _labels;
@@ -45,6 +46,10 @@ namespace ExcelTool
         string _testData;
         string _result;
         string _folder;
+
+        ExcelWorksheet destWS;
+        IList<string> destWsNamesList;
+        static int destRow = 1;
 
         /// <summary>
         /// Provide the spreadsheet filename (without .xlsx extension) as an argument and place the file in C:\TestCases
@@ -54,7 +59,7 @@ namespace ExcelTool
         {
             int Import_Key = ImportHeaders.Key.GetIndex();
             int Import_TCName = ImportHeaders.TCName.GetIndex();
-            int Import_PreCondition = ImportHeaders.Precondition.GetIndex();
+            int Import_PreConditions = ImportHeaders.Preconditions.GetIndex();
             int Import_Objective = ImportHeaders.Objective.GetIndex();
             int Import_Priority = ImportHeaders.Priority.GetIndex();
             int Import_Labels = ImportHeaders.Labels.GetIndex();
@@ -67,7 +72,7 @@ namespace ExcelTool
             int Dest_TCName = DestHeaders.TCName.GetIndex();
             int Dest_Description = DestHeaders.Description.GetIndex();
             int Dest_Tags = DestHeaders.Tags.GetIndex();
-            int Dest_Precondition = DestHeaders.Precondition.GetIndex();
+            int Dest_Preconditions = DestHeaders.Preconditions.GetIndex();
             int Dest_Step = DestHeaders.Step.GetIndex();
             int Dest_Result = DestHeaders.Result.GetIndex();
 
@@ -77,17 +82,6 @@ namespace ExcelTool
 
             using (var destPkg = new ExcelPackage())
             {
-                //Create an instance of the new workbook and worksheet
-                ExcelWorksheet destWS = destPkg.Workbook.Worksheets.Add(worksheetName);
-
-                destWS.Cells[1, Dest_ID].Value = "Test ID";
-                destWS.Cells[1, Dest_TCName].Value = "Test name";
-                destWS.Cells[1, Dest_Description].Value = "Test description";
-                destWS.Cells[1, Dest_Tags].Value = "Test tags";
-                destWS.Cells[1, Dest_Precondition].Value = "Pre-condition";
-                destWS.Cells[1, Dest_Step].Value = "Steps";
-                destWS.Cells[1, Dest_Result].Value = "Result";
-
                 //Read from worksheet to export
                 FileInfo existingFile = new FileInfo($"{filePath}.xlsx");
                 Console.WriteLine(existingFile.ToString());
@@ -96,13 +90,12 @@ namespace ExcelTool
                     ExcelWorksheet importWS = importPkg.Workbook.Worksheets["Sheet0"];
                     int colCount = importWS.Dimension.End.Column;
                     int rowCount = importWS.Dimension.End.Row;
-                    int destRow = 2;
 
                     for (int row = 2; row < rowCount; row++)
                     {
                         _key = importWS.Cells[row, Import_Key].Value?.ToString();
                         _tcName = importWS.Cells[row, Import_TCName].Value?.ToString();
-                        _preCondition = importWS.Cells[row, Import_PreCondition].Value?.ToString();
+                        _preConditions = importWS.Cells[row, Import_PreConditions].Value?.ToString();
                         _objective = importWS.Cells[row, Import_Objective].Value?.ToString();
                         _priority = importWS.Cells[row, Import_Priority].Value?.ToString();
                         _labels = importWS.Cells[row, Import_Labels].Value?.ToString();
@@ -111,41 +104,81 @@ namespace ExcelTool
                         _result = importWS.Cells[row, Import_Result].Value?.ToString();
                         _folder = importWS.Cells[row, Import_Folder].Value?.ToString();
 
-
-
                         if (!string.IsNullOrWhiteSpace(_key))
                         {
-                            if (!string.IsNullOrWhiteSpace(_folder) && _folder.Contains("/"))
+                            var folders = Regex.Split(_folder, "/");
+                            int fhCount = (folders.Length > 2) ? 3 : folders.Length;
+
+                            var folderHiearchy = _folder.Split(new[] { '/' }, fhCount);
+                            string rootFolder = folderHiearchy[1];
+                            Console.WriteLine($"ROOT FOLDER: {rootFolder}");
+                            var destWorksheets = destPkg.Workbook.Worksheets;
+                            destWsNamesList = new List<string>();
+
+                            for (int i = 0; i < destWorksheets.Count; i++)
                             {
-                                var folderHiearchy = Regex.Split(_folder, "/");
-                                int fhCount = folderHiearchy.Length;
+                                destWsNamesList.Add(destWorksheets[i].Name);                                
+                            }
 
-                                //TODO:
-                                //folder(index1) - create worksheet
-                                //subfolder1(index2) - if worksheet exists (else create new worksheet)
-                                    //--get row count
-                                    //--if merged row with subfolder name exists, append to end of row count (else create merged row)
-                                //subfolder2(index3) - if (subfolder1(index2)) worksheet exists (else create new worksheet)
-                                    //--get row count
-                                    //--if merged row with 
+                            if (rootFolder.Length > 31)
+                            {
+                                rootFolder = rootFolder.Substring(0, 31);
+                                Console.WriteLine($"TRUNCATED ROOT FOLDER: {rootFolder}");
+                            }
+                         
+                            bool rootWorksheetExists = (destWsNamesList.Contains(rootFolder)) ? true : false;
+                            string rootwsMsg;
+                            if (rootWorksheetExists)
+                            {
+                                rootwsMsg = "WORKSHEET EXISTS:";
+                                destWS = destPkg.Workbook.Worksheets[rootFolder];
 
-
-                                if (fhCount > 1)
+                                if (fhCount > 2)
                                 {
-                                    //TODO: use hashmap to track sub-folder merged-cells exists
-                                    //or Create new worksheet for each sub-folder entry
-                                    for (int i = 2; i < fhCount; i++)
+                                    using (var mergedCell = destWS.Cells[destRow, 1])
                                     {
-                                        using (var mergedCell = destWS.Cells[row, 1])
-                                        {
-                                            mergedCell.Style.Font.Bold = true;
-                                            mergedCell.Value = folderHiearchy[i];
-                                            destWS.Cells[row, 1, row, 7].Merge = true;
-                                            destWS.Cells[row, 1, row, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                                        }
+                                        mergedCell.Value = folderHiearchy[2];
+                                        destWS.Cells[destRow, 1, destRow, 7].Merge = true;
+                                        destWS.Cells[destRow, 1, destRow, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                                        destRow++;
                                     }
                                 }
                             }
+                            else
+                            {
+                                destRow = 1;
+                                rootwsMsg = "WORKSHEET NAME ADDED:";
+                                destWS = destPkg.Workbook.Worksheets.Add(rootFolder);
+                                destWS.Cells[destRow, Dest_ID].Value = "Test ID";
+                                destWS.Cells[destRow, Dest_TCName].Value = "Test name";
+                                destWS.Cells[destRow, Dest_Description].Value = "Test description";
+                                destWS.Cells[destRow, Dest_Tags].Value = "Test tags";
+                                destWS.Cells[destRow, Dest_Preconditions].Value = "Pre-conditions";
+                                destWS.Cells[destRow, Dest_Step].Value = "Steps";
+                                destWS.Cells[destRow, Dest_Result].Value = "Result";
+                                destRow++;
+
+                                if (fhCount > 2)
+                                {
+                                    using (var mergedCell = destWS.Cells[destRow, 1])
+                                    {
+                                        mergedCell.Value = folderHiearchy[2];
+                                        destWS.Cells[destRow, 1, destRow, 7].Merge = true;
+                                        destWS.Cells[destRow, 1, destRow, 7].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                                        destRow++;
+                                    }
+                                }
+
+                            }
+                            Console.WriteLine($"{rootwsMsg} {rootFolder}");
+
+
+
+                            destWS.Cells[destRow, Dest_ID].Value = _key;
+                            destWS.Cells[destRow, Dest_TCName].Value = _tcName;
+                            destWS.Cells[destRow, Dest_Description].Value = _objective;
+                            destWS.Cells[destRow, Dest_Preconditions].Value = _preConditions;                           
+                            destWS.Cells[destRow, Dest_Tags].Value = _priority;
 
                             if (!string.IsNullOrWhiteSpace(_labels))
                             {
@@ -153,24 +186,20 @@ namespace ExcelTool
                                 {
                                     string[] multiLabel = Regex.Split(_labels, ", ");
 
+                                    StringBuilder sb = new StringBuilder();
+
                                     for (int i = 0; i < multiLabel.Length; i++)
                                     {
-                                        destWS.Cells[destRow, Dest_Tags].Value = multiLabel[i];
+                                        sb.Append($"{multiLabel[i]}{Environment.NewLine}");
                                     }
+
+                                    destWS.Cells[destRow, Dest_Tags].Value = sb.ToString();
                                 }
                                 else
                                 {
                                     destWS.Cells[destRow, Dest_Tags].Value = _labels;
                                 }
                             }
-
-                            destWS.Cells[destRow, Dest_ID].Value = _key;
-                            destWS.Cells[destRow, Dest_TCName].Value = _tcName;
-                            destWS.Cells[destRow, Dest_Description].Value = _objective;
-                            destWS.Cells[destRow, Dest_Precondition].Value = _preCondition;
-
-                            
-                            destWS.Cells[destRow, Dest_Tags].Value = _priority;
 
                             if (string.IsNullOrWhiteSpace(_step))
                             {
